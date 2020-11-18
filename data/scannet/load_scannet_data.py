@@ -11,7 +11,7 @@ import inspect
 import json
 import numpy as np
 import os
-import scannet_utils
+from . import scannet_utils
 
 currentdir = os.path.dirname(
     os.path.abspath(inspect.getfile(inspect.currentframe())))

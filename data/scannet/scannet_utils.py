@@ -15,7 +15,6 @@ from plyfile import PlyData
 
 def represents_int(s):
     """Judge whether string s represents an int.
-
     Args:
         s(str): The input string to be judged.
 
