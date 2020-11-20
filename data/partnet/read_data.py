@@ -1,13 +1,7 @@
-import argparse
-from datetime import datetime
 import h5py
-import numpy as np
 import os
-import helpers
-import numpy as np
-from pathlib import Path
-import torch
-from torch.utils import data
+import json
+
 
 # load h5 files
 stat_in_fn = '../../stats/after_merging_label_ids/%s-level-%d.txt' % (FLAGS.category, FLAGS.level_id)

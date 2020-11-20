@@ -5,8 +5,7 @@ from mmdet3d.core import show_result
 from mmdet3d.core.bbox import DepthInstance3DBoxes
 from mmdet.datasets import DATASETS
 from .custom_3d import Custom3DDataset
-
-
+from data.partnet.read_data import load_h5
 @DATASETS.register_module()
 class PartNetDataset(Custom3DDataset):
     r"""ParNet Dataset.
@@ -30,9 +29,16 @@ class PartNetDataset(Custom3DDataset):
                'faucet', 'hat', 'keyboard', 'knife','lamp', 'laptop', 'microwave', 'mug', 'refrigerator','scissors',
                'storage','table','trashcan','vase')
 
+    stat_in_fn = '../../stats/after_merging_label_ids/%s-level-%d.txt' % (FLAGS.category, FLAGS.level_id)
+    print('Reading from ', stat_in_fn)
+    with open(stat_in_fn, 'r') as fin:
+        part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
+    print('Part Name List: ', part_name_list)
+
     def __init__(self,
                  data_root,
                  ann_file,
+                 level=None,
                  pipeline=None,
                  classes=None,
                  test_mode=False):
@@ -42,6 +48,28 @@ class PartNetDataset(Custom3DDataset):
             pipeline=pipeline,
             classes=classes,
             test_mode=test_mode)
+
+    def get_parts_label(self, label_file, level, classes=CLASSES):
+        """get the parts name list at the given level
+        Args:
+            label_file (str): the base dir for hierarchical label, usually  "stats/after_merging2_label_ids"
+            level (int): the level for part segmentation
+            class (str): Classes used in the dataset. Defaults to CLASSES(all class).
+
+        Returns:
+            list: part_name_list containing all name at different levels
+        """
+        assert osp.isfile(label_file)
+        part_name_list = []
+        for cls in classes:
+            for _level in range(1,level+1):
+                stat_in_fn = f"stat_in_fn/{cls.capitalize()}-{_level}.txt"
+                try:
+                    # the file may not exist for current level
+                    with open(stat_in_fn, 'r') as fin:
+                        part_name_list += [item.rstrip().split()[1] for item in fin.readlines()]
+        return part_name_list
+
 
     def get_ann_info(self, index):
         """Get annotation info according to the given index.
@@ -60,8 +88,12 @@ class PartNetDataset(Custom3DDataset):
                 - pts_semantic_mask_path (str): Path of semantic masks.
         """
         # Use index to get the annos, thus the evalhook could also use this api //TODO
+        # self.data_info is loaded using mmcv.load
+        # mmcv provides a universal api for loading and dumping data, currently supported formats are json, yaml and pickle
         info = self.data_infos[index]
-        if info['annos']['gt_num'] != 0:
+        # get part segmentation groundtruth
+
+        if info['ins_seg']['gt_num'] != 0:
             gt_bboxes_3d = info['annos']['optimal_bounding_box'].astype(
                 np.float32)  # k boxes, 6
             gt_labels_3d = info['annos']['class'].astype(np.long)
@@ -69,8 +101,8 @@ class PartNetDataset(Custom3DDataset):
             gt_bboxes_3d = np.zeros((0, 6), dtype=np.float32)
             gt_labels_3d = np.zeros((0, ), dtype=np.long)
 
-        # to target box structure
-        gt_bboxes_3d = fo(
+        # to target box structure //TODO: Zhan's Box
+        gt_bboxes_3d = DepthInstance3DBoxes(
             gt_bboxes_3d,
             box_dim=gt_bboxes_3d.shape[-1],
             with_yaw=False,
@@ -81,6 +113,8 @@ class PartNetDataset(Custom3DDataset):
         pts_semantic_mask_path = osp.join(self.data_root,
                                           info['pts_semantic_mask_path'])
 
+        # pts, gt_label, gt_mask, gt_valid, gt_other_mask = load_h5(pts_instance_mask_path)
+        # already in loading
         anns_results = dict(
             gt_bboxes_3d=gt_bboxes_3d,
             gt_labels_3d=gt_labels_3d,
@@ -207,9 +241,7 @@ class HDF5Dataset(data.Dataset):
             # remove invalid cache_idx
             self.data_info = [
                 {'file_path': di['file_path'], 'type': di['type'], 'shape': di['shape'], 'cache_idx': -1} if di[
-                                                                                                                 'file_path'] ==
-                                                                                                             removal_keys[
-                                                                                                                 0] else di
+                                                                                               0] else di
                 for di in self.data_info]
 
     def _add_to_cache(self, data, file_path):

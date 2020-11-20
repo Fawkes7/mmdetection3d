@@ -34,6 +34,8 @@ class Baseline(nn.Module):
         # instance seg branch
         self.ins_conv1 = torch.nn.Conv1d(in_channels=128, out_channels=256, kernel_size=1, padding=0)
         self.ins_bn1 = torch.nn.BatchNorm1d(num_features=256)
+
+
         self.ins_conv2 = torch.nn.Conv1d(in_channels=256, out_channels=256, kernel_size=1, padding=0)
         self.ins_bn2 = torch.nn.BatchNorm1d(num_features=256)
         self.ins_conv3 = torch.nn.Conv1d(in_channels=256, out_channels=128, kernel_size=1, padding=0)

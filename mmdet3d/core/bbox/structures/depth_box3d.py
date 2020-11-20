@@ -18,7 +18,6 @@ class DepthInstance3DBoxes(BaseInstance3DBoxes):
                        |  /
                        | /
                        0 ------> x right (yaw=0)
-
     The relative coordinate of bottom center in a Depth box is (0.5, 0.5, 0),
     and the yaw is around the z axis, thus the rotation axis=2.
     The yaw is 0 at the positive direction of x axis, and increases from
