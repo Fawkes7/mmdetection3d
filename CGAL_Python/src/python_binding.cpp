@@ -1,9 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
-#include "spdlog/spdlog.h"
-#include "spdlog/cfg/env.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
 
 #include <iostream>
 #include <fstream>
@@ -48,7 +45,6 @@ PYBIND11_MODULE(pycgal, m)
     m.doc() = "python binding for CGAL (https://doc.cgal.org/latest/Manual/index.html)";
 
     py::module m_init = m.def_submodule("init", "Pybinding of initialization");
-    m_init.def("init_spd_logger", [](){ auto logger = spdlog::stderr_color_mt("PYCGAL"); });
 
     py::class_<Point_3>(m, "Point_3")
     .def(py::init<double, double, double>(), py::arg("x"), py::arg("y"), py::arg("z"))
@@ -66,12 +62,6 @@ PYBIND11_MODULE(pycgal, m)
     py::module m_obb = m.def_submodule("obb", "Pybinding of optimal_bounding_box");
     m_obb.def("oriented_bounding_box", [](const py::array_t<double> &points){
         auto points_buffer = points.request();
-        if (!(points_buffer.shape.size() == 2 && points_buffer.shape.back() == 3))
-        {
-            auto logger = spdlog::get("PYCGAL");
-            logger->error("Shape is not N * 3");
-            //std::exit(0);
-        }
         std::array<Point_3, 8> obb_points;
         std::vector <Point_3> point_set;
 
