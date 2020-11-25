@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Point Cloud Visualization</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/bulmaswatch/flatly/bulmaswatch.min.css">
+    <style>
+        body {
+            position: center;
+            font-size: 1.5em;
+            line-height: 1.5;
+            /*color: black;*/
+        }
+
+        strong, table th {
+            /*color: black;*/
+        }
+
+
+        .image {
+            display: flex;
+        }
+
+        #info {
+            position: absolute;
+            top: 0px;
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #canvases {
+            overflow: visible;
+            white-space: nowrap;
+            overflow-x: scroll;
+        }
+
+        #canvases .slide {
+            display: inline-block;
+            margin-bottom: 200px;
+            margin-top: 100px;
+        }
+
+    </style>
+</head>
+<body style="text-align:center;">
+
+Ground Truth vs Prediction:
+<div class="slide" style="text-align:center;">
+    <canvas id="canvas1" width="800" height="600" style="width: 800px; height: 600px;"></canvas>
+    <canvas id="canvas2" width="800" height="600" style="width: 800px; height: 600px;"></canvas>
+</div>
+
+
+
+<section style="margin: 0 auto; width: 20%;border: 1px solid;" class="pcd_color">
+    <div style="float: right;">
+        <select id="pointTexture">
+            <option value="rgb" selected="selected">RGB</option>
+            <option value="white">White</option>
+            <option value="black">Black</option>
+        </select>
+    </div>
+    <h2 style="display: block; text-align:left;">Color:</h2>
+</section>
+<section style="margin: 0 auto; width: 20%;border: 1px solid;" class="pcd_size">
+    <div style="float: right;">
+        <select id="pointSize">
+            <option value="big">Big</option>
+            <option value="normal" selected="selected">Normal</option>
+            <option value="small">Small</option>
+        </select>
+    </div>
+    <h2 style="display: block; text-align:left;">Point Size:</h2>
+</section>
+<section style="margin: 0 auto; width: 20%;border: 1px solid;" class="colormap">
+    <h2 style="display:block"> Color map </h2>
+    &lformat color_map &rformat
+</section>
+
+<!-- <div>
+
+    Prediction:
+    <div class="slide">
+        <canvas id="canvas2" width="800" height="600" style="width: 800px; height: 600px;"></canvas>
+        Depth: <img alt="img" src="/.missing" style="width: 20%;">
+        Normal: <img alt="img" src="/.missing" style="width: 20%;">
+        <br/>
+        Depth Error: <img alt="img" src="/.missing" style="width: 20%;">
+        Normal Error: <img alt="img" src="/.missing" style="width: 20%;">
+    </div>
+
+    <br/>
+    Input Views:
+    <div class="slide">
+    <img alt="img" src="/.missing" style="width: 25%;"> <img alt="img" src="/.missing" style="width: 25%;">
+    </div>
+</div>
+-->
+<!--<div id="info">
+    Prediction result of <strong>obj_name</strong> with model <strong>model_name</strong><br>
+    Ground truth is at the most left.
+</div>-->
+
+<p id="test_webgl"></p>
+
+<script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@v0.108.0/build/three.module.js";
+
+    import {PCDLoader} from 'https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/loaders/PCDLoader.js';
+    import {PLYLoader} from 'https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/loaders/PLYLoader.js';
+    import {TrackballControls} from "https://cdn.jsdelivr.net/npm/three@v0.108.0/examples/jsm/controls/TrackballControls.js";
+    import {FileLoader} from "https://cdn.jsdelivr.net/npm/three@v0.108.0/src/loaders/FileLoader.js";
+
+    // parameters
+    var files = [&lformat file_path &rformat];
+    var obj_names = [&lformat file_name &rformat];
+    var obj_type = [&lformat file_type &rformat];
+    var shared_meshes = [];
+    var pred_meshes = [];
+    var gt_meshes = []
+
+    //Shared across canvas
+    var index = 0;
+    var views = [];
+    var plyloader = new PLYLoader();
+    var fileloader = new FileLoader();
+
+    function componentToHex(c) {
+        var hex = c.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    }
+
+    function rgbToHex(r, g, b) {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    }
+
+    function addShadowedLight(scene, x, y, z, color, intensity) {
+        var directionalLight = new THREE.DirectionalLight(color, intensity);
+        directionalLight.position.set(x, y, z);
+        scene.add(directionalLight);
+        directionalLight.castShadow = true;
+
+        var d = 1;
+        directionalLight.shadow.camera.left = -d;
+        directionalLight.shadow.camera.right = d;
+        directionalLight.shadow.camera.top = d;
+        directionalLight.shadow.camera.bottom = -d;
+
+        directionalLight.shadow.camera.near = 1;
+        directionalLight.shadow.camera.far = 4;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.bias = -0.001;
+    }
+
+    class Viewer
+    {
+        constructor(canvas, canvasWidth, canvasHeight, canvasLeft, canvasBottom, meshes) {
+            canvas.position = 'absolute';
+            canvas.left = canvasLeft;
+            canvas.bottom = canvasBottom;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            const unitHeight = window.innerHeight / 2.4;
+            const unitWidth = window.innerWidth / 3;
+            // common camera scene  other meshes
+            this.camera = new THREE.PerspectiveCamera(60, unitWidth / unitHeight, 0.1, 100.0);
+            this.camera.position.set(2, 2, 2);
+
+            this.scene = new THREE.Scene();
+            this.scene.background = new THREE.Color(0x72645b);
+            this.scene.fog = new THREE.Fog(0x72645b, 1, 15);
+
+            // Ground
+            var plane = new THREE.Mesh(
+                new THREE.PlaneBufferGeometry(100, 100),
+                new THREE.MeshPhongMaterial({color: 0x999999, specular: 0x101010})
+            );
+            plane.name = 'plane';
+            plane.rotation.x = -Math.PI / 2;
+            plane.position.y = -1.5;
+            this.scene.add(plane);
+            plane.receiveShadow = true;
+
+            // Lights
+            this.scene.add(new THREE.HemisphereLight(0x555555, 0x111111));
+            addShadowedLight(this.scene, 1, 1, 1, 0xffffff, 1.35);
+            addShadowedLight(this.scene, 0.5, 1, -1, 0xffaa00, 1);
+
+            for (var i = 0; i < meshes.length; i++) {
+                var mesh;
+                if (meshes[i].type === 'LineSegments')
+                {
+                    const box = meshes[i].box.clone();
+                    const color = meshes[i].material.color;
+                    mesh = new THREE.Box3Helper(box, color);
+                }
+                else
+                    mesh = meshes[i].clone();
+                mesh.visible = true;
+                this.scene.add(mesh);
+            }
+
+            this.canvas = canvas;
+            this.renderer = new THREE.WebGLRenderer({antialias: true, canvas: canvas});
+            this.renderer.setSize(canvas.width, canvas.height);
+            this.renderer.gammaInput = true;
+            this.renderer.gammaOutput = true;
+            this.renderer.shadowMap.enabled = true;
+
+            this.controls = new TrackballControls(this.camera, this.renderer.domElement);
+            this.controls.rotateSpeed = 3.14;
+            this.controls.zoomSpeed = 1.2;
+            this.controls.panSpeed = 0.8;
+            this.controls.noPan = true;
+            this.controls.keys = [65, 83, 68];
+
+        }
+        renderView() {
+            this.renderer.render(this.scene, this.camera);
+        };
+    }
+
+    function animate() {
+        var i, j, scene;
+        let texture = document.getElementById('pointTexture').value
+        let pointSize = document.getElementById('pointSize').value
+        if (pointSize === 'normal')
+            pointSize = 0.02;
+        else if (pointSize === 'big')
+            pointSize = 0.05;
+        else
+            pointSize = 0.01;
+
+        for (i = 0; i < views.length; ++i) {
+            scene = views[i].scene
+            for (j = 0; j < scene.children.length; ++j) {
+                if (scene.children[j].type === 'Points') {
+                    if (texture === 'rgb')
+                        scene.children[j].material = new THREE.PointsMaterial({vertexColors: true, size: pointSize});
+                    else if (texture === 'white')
+                        scene.children[j].material = new THREE.PointsMaterial({color: 0xFFFFFF, size: pointSize});
+                    else if (texture === 'black')
+                        scene.children[j].material = new THREE.PointsMaterial({color: 0x000000, size: pointSize});
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+
+        for (i = 0; i < views.length; ++i)
+            views[i].controls.update();
+        for (i = 0; i < views.length; ++i)
+            views[i].renderView();
+    }
+
+
+    function loadModelFile() {
+        if (index > files.length - 1) {
+            const unitHeight = window.innerHeight / 2.4;
+            const unitWidth = window.innerWidth / 3;
+            var canvas1 = document.getElementById("canvas1"), canvas2 = document.getElementById("canvas2");
+            views.push(new Viewer(canvas1, unitWidth, unitHeight, unitWidth * 0,
+                        unitHeight, shared_meshes.concat(gt_meshes)));
+            views.push(new Viewer(canvas2, unitWidth, unitHeight, unitWidth * 0,
+                        unitHeight, shared_meshes.concat(pred_meshes)));
+            animate();
+        }
+        else {
+            if (obj_type[index] === 'json_box') {
+                fileloader.load(files[index], function (text) {
+                    console.log('json box ' + files[index]);
+                    let boxes = JSON.parse(text);
+                    for (var i = 0; i < boxes.length; i++) {
+                        let box = new THREE.Box3();
+                        let center = new THREE.Vector3(boxes[i][0], boxes[i][1], boxes[i][2]);
+                        let size = new THREE.Vector3(boxes[i][3], boxes[i][4], boxes[i][5]);
+                        let color = rgbToHex(boxes[i][6], boxes[i][7], boxes[i][8]);
+                        box.setFromCenterAndSize(center, size);
+                        let helper = new THREE.Box3Helper(box, color);
+                        helper.material.linewidth = 2;
+                        //helper.rotateZ(boxes[i][6]);
+                        helper.name = obj_names[index] + '_' + i.toString();
+                        if (obj_names[index] === 'gt_box')
+                            gt_meshes.push(helper);
+                        else
+                            pred_meshes.push(helper);
+                        // console.log(helper.material)
+
+                    }
+                    index++;
+                    loadModelFile();
+                }, function (xhr) {
+                    var percent = (100 * xhr.loaded / xhr.total).toFixed(0);
+                }, function (err) {
+                    console.log('error loading ' + files[index]);
+                    console.log(err);
+                });
+            }
+            else{
+                plyloader.load(files[index], function (geometry) {
+                    var mesh = new THREE.Object3D, material;
+                    if (obj_type[index] === 'bbox') {
+                        console.log('bbox');
+                        const edges = new THREE.EdgesGeometry(geometry);
+                        material = new THREE.LineBasicMaterial();
+                        material.vertexColors = THREE.VertexColors;
+                        mesh = new THREE.LineSegments(edges, material);
+                    } else if (obj_type[index] === 'pcd') {
+                        console.log('pcd');
+                        material = new THREE.PointsMaterial({size: 0.01});
+                        material.vertexColors = THREE.VertexColors;
+                        mesh = new THREE.Points(geometry, material);
+                        //mesh.position.set(0, 0, 0);
+                    } else if (obj_type[index] === 'mesh') {
+                        console.log('mesh');
+                        // material = new THREE.LineBasicMaterial();
+                        // material.vertexColors = THREE.VertexColors;
+                        // mesh = new THREE.LineSegments(geometry, material);
+                        //mesh.position.set(0, 0, 0);
+                        material = new THREE.LineBasicMaterial();
+                        material.vertexColors = THREE.VertexColors;
+                        mesh = new THREE.Mesh(geometry, material);
+                    } else {
+                        console.log('Error');
+                    }
+                    //const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} )
+                    mesh.name = obj_names[index];
+                    // console.log(mesh, mesh.attributes, mesh.geometry);
+                    //mesh.geometry.computeBoundingSphere();
+                    //offset = mesh.geometry.boundingSphere.center;
+                    //mesh.geometry.translate(-offset.x, -offset.y, -offset.z);
+                    //mesh.receiveShadow = true;
+                    //mesh.castShadow = true;
+                    shared_meshes.push(mesh);
+                    index++;
+                    loadModelFile();
+                }, function (xhr) {
+                    var percent = (100 * xhr.loaded / xhr.total).toFixed(0);
+                }, function (err) {
+                    console.log('error loading ' + files[index]);
+                    console.log(err);
+                });
+            }
+        }
+    }
+
+    loadModelFile();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Table of Items</title>
+    <link rel="stylesheet" href="https://unpkg.com/bulmaswatch/flatly/bulmaswatch.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <style>
+      table {
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+  <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+  <script>
+    var ncols = 0
+
+    $(document).ready(function() {
+        ncols = $("thead tr th").length
+        $("table").append("<tfoot><tr style='text-align: right;'><th></th><th>Avg</th>" + 
+        "<th></th>".repeat(ncols - 2) + "</tr></tfoot>")
+        $("#filter-content").on("keyup", filter_table)
+        update_tfoot()
+    });
+
+    function filter_table() {
+        var value = $(this).val().toLowerCase();
+        $("tbody tr td:nth-child(2)").filter(function() {
+            $(this).parent().toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+        update_tfoot()
+    }
+
+    function update_tfoot() {
+        for (i = 3; i <= ncols; i++) {
+            let sum = 0, nrows = 0;
+            $("tbody tr:visible td:nth-child("+i+")").each((idx, elem) => (sum += Number(elem.innerText)) && (nrows = idx))
+            if (isNaN(sum) || sum == 0) info = "";
+            else info = Math.round(1000 * sum / (nrows + 1)) / 1000;
+            $("tfoot tr th:nth-child("+i+")").text(info)
+        }
+    }
+  </script>
+
+  <section class="section" id="table1" style="margin: 0 auto; text-align: center;">
+    <h1 class="title">Items</h1>
+    <div style="position: fixed; top: 4%; right: 5%;">
+      <input id="filter-content" type="text" placeholder="Filter..">
+    </div>
+    <hr>
+    &lformat table_string &rformat
+  </section>
+
+  </body>
+</html>
