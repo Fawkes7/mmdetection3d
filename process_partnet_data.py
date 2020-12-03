@@ -29,12 +29,14 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
                 boxes = []
                 names = []
                 classes = []
+                if not valid.any():
+                    continue
 
                 part_label = sem_label.copy()
                 for j in range(part_mask.shape[0]):
-                    if not valid[j]:
-                        continue
                     part_mask_j = part_mask[j]
+                    if not valid[j] or not part_mask_j.any():
+                        continue
                     box = point_cloud_to_bbox(point[part_mask_j])
                     part_label[part_mask_j] = len(boxes)
                     boxes.append(box)
@@ -53,17 +55,16 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
                 part_label = np.array(part_label).astype(np.long)
                 sem_label = np.array(sem_label).astype(np.long)
 
-                # print(point.shape, point_file)
-                # exit(0)
                 # print(f'point_{example_index}.bin'))
                 # print(point.shape)
                 # exit(0)
-
+                point_xyz_feat = np.concatenate([point, point], axis=-1)
                 point.tofile(point_file)
                 part_label.tofile(instance_file)
                 sem_label.tofile(sem_file)
 
                 annotations = {'gt_num': boxes.shape[0]}
+                #print(boxes.shape, valid.any())
                 annotations['location'] = boxes[:, :3]
                 annotations['dimensions'] = boxes[:, 3:6]
                 annotations['gt_boxes_upright_depth'] = boxes
@@ -99,15 +100,25 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
     pickle.dump(ret, open(osp.join(output_dir, 'info.pkl'), 'wb'))
 
 
-def generate_scannet_like(cat='Laptop', level=1, mode='train'):
+def generate_scannet_like(cat='Laptop', level=1, mode='train',
+                          partnet_dir=f'/home/lz/data/dataset/PartNet/'):
     print(f'Generate {cat} {level} {mode}')
-    root = Path(f'/home/lz/data/dataset/PartNet/ins_seg_h5_for_detection/{cat}-{level}/')
-    with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
+    root = Path(partnet_dir) / f'ins_seg_h5_for_detection/{cat}-{level}/'
+    with open(str(Path(partnet_dir) / f'stats/after_merging2_label_ids/{cat}-level-{level}.txt'), 'r') as fin:
         part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
     files = sorted([str(_) for _ in root.glob(f'{mode}*.h5')])
     generate_scannet_like_from_h5(files, part_name_list, f'partnet_dataset/{cat}-{level}/{mode}', mode=mode)
 
 
-generate_scannet_like(mode='train')
-generate_scannet_like(mode='test')
-generate_scannet_like(mode='val')
+if __name__ == '__main__':
+    import json
+    cat_info = json.load(open('/home/lz/data/Projects/Vision/3D/code/working_code/configs/partnet_category.json'))
+    cat_a = cat_info['cat']
+    level_a = cat_info['level']
+
+    #cat_a = 'Bed'
+    #level_a = 1
+
+    generate_scannet_like(cat_a, level_a, mode='train')
+    generate_scannet_like(cat_a, level_a, mode='test')
+    generate_scannet_like(cat_a, level_a, mode='val')

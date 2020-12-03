@@ -19,29 +19,34 @@
     var ncols = 0
 
     $(document).ready(function() {
-        ncols = $("thead tr th").length
-        $("table").append("<tfoot><tr style='text-align: right;'><th></th><th>Avg</th>" + 
-        "<th></th>".repeat(ncols - 2) + "</tr></tfoot>")
-        $("#filter-content").on("keyup", filter_table)
-        update_tfoot()
+      ncols = $("thead tr th").length;
+      $("table").find('thead').append("<tr style='text-align: right;'><th>Overal</th>" + "&lformat overal_info &rformat" + "</tr>");
+
+      $("table").colResizable({
+        liveDrag:true,
+        draggingClass:"dragging",
+      });
+
+      $("#filter-content").on("keyup", filter_table);
+      update_tfoot();
     });
 
     function filter_table() {
-        var value = $(this).val().toLowerCase();
-        $("tbody tr td:nth-child(2)").filter(function() {
-            $(this).parent().toggle($(this).text().toLowerCase().indexOf(value) > -1)
-        });
-        update_tfoot()
+      var value = $(this).val().toLowerCase();
+      $("tbody tr td:nth-child(2)").filter(function() {
+        $(this).parent().toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+      update_tfoot()
     }
 
     function update_tfoot() {
-        for (i = 3; i <= ncols; i++) {
-            let sum = 0, nrows = 0;
-            $("tbody tr:visible td:nth-child("+i+")").each((idx, elem) => (sum += Number(elem.innerText)) && (nrows = idx))
-            if (isNaN(sum) || sum == 0) info = "";
-            else info = Math.round(1000 * sum / (nrows + 1)) / 1000;
-            $("tfoot tr th:nth-child("+i+")").text(info)
-        }
+      for (i = 3; i <= ncols; i++) {
+        let sum = 0, nrows = 0;
+        $("tbody tr:visible td:nth-child("+i+")").each((idx, elem) => (sum += Number(elem.innerText)) && (nrows = idx))
+        if (isNaN(sum) || sum == 0) info = "";
+        else info = Math.round(1000 * sum / (nrows + 1)) / 1000;
+        $("tfoot tr th:nth-child("+i+")").text(info)
+      }
     }
   </script>
 

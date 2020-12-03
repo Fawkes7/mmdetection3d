@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
-import pybind11, argparse
+import argparse
 #from pybind11 import get_cmake_dir
 from glob import glob
 import sys, os, subprocess, platform, shutil
@@ -21,7 +21,7 @@ def get_abs_path(path):
 
 class Pybind11Extension(Extension):
     def __init__(self, name, sources, *args, include_dirs=None, library_dirs=None, libraries=None, **kw):
-        pybind_include_dirs = [pybind11.get_include(user=False), pybind11.get_include(user=True)]
+        pybind_include_dirs = ['./pybind11/include']
         include_dirs = (include_dirs or []) + pybind_include_dirs
         library_dirs = library_dirs or []
         libraries = libraries or []

@@ -1,0 +1,7 @@
+{
+  "cat": "&lformat cat &rformat",
+  "level": "&lformat level &rformat",
+  "working_code": "&lformat workingcode &rformat",
+  "partnet": "/home/lz/data/dataset/PartNet",
+  "mmdet3d": "/home/lz/data/Projects/Vision/3D/github_resources/mmdetection3d/"
+}
