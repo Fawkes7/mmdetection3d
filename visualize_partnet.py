@@ -170,7 +170,7 @@ def evaluate(gt_infos, pre_dict, part_name_list, iou_th=(0.25, 0.5, 0.75, 0.9)):
     return ret_dict, info_image
 
 
-def build_website_from_mmdet3d(annotations, dataset_dir, output_dir, pred, part_name_list, iou_th=(0.5, )):
+def build_website_from_mmdet3d(cat, level, annotations, dataset_dir, output_dir, pred, part_name_list, iou_th=(0.5, )):
     ret_dict, (aps, precisions, recalls, aabb_ious) = evaluate(annotations, pred, part_name_list, iou_th)
     #print(ret_dict)
     #exit(0)
@@ -294,10 +294,10 @@ def build_website_from_mmdet3d(annotations, dataset_dir, output_dir, pred, part_
     df = pd.DataFrame(table, columns=['Object', ] + data_name)
     main_table = df.to_html(escape=False, classes="table sortable is-striped is-hoverable", border=0, index=False)
     html_from_template(table_template, out_file=osp.join(output_dir, 'main_page.html'), table_string=main_table,
-                       overal_info=overall_string)
+                       overal_info=overall_string, type=f'{cat}-{level}')
 
 
-def build_website_from_mmdet3d_without_pred(annotations, dataset_dir, output_dir, part_name_list):
+def build_website_from_mmdet3d_without_pred(cat, level, annotations, dataset_dir, output_dir, part_name_list):
     dataset_path = Path(dataset_dir)
     item_dir = osp.join(output_dir, 'item')
     shutil.rmtree(output_dir, True)
@@ -364,7 +364,8 @@ def build_website_from_mmdet3d_without_pred(annotations, dataset_dir, output_dir
 
     df = pd.DataFrame(table, columns=['Obj'] + part_name_list)
     main_table = df.to_html(escape=False, classes="table sortable is-striped is-hoverable", border=0, index=False)
-    html_from_template(table_template, out_file=osp.join(output_dir, 'main_page.html'), table_string=main_table)
+    html_from_template(table_template, out_file=osp.join(output_dir, 'main_page.html'), table_string=main_table,
+                       type=f'{cat}-{level}')
 
 
 def generate_website(cat=None, level=None, mode='train'):
@@ -383,9 +384,11 @@ def generate_website(cat=None, level=None, mode='train'):
     annotations = pickle.load(open(info_file, 'rb'))
     with open(str(partnet / f'stats/after_merging2_label_ids/{cat}-level-{level}.txt'), 'r') as fin:
         part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
+
+    part_name_list = [_.split('/')[-1] for _ in part_name_list]
     pred = pickle.load(open(str(mmdet3d_folder / f'results/{mode}_{cat}-{level}.pkl'), 'rb'))
-    build_website_from_mmdet3d(annotations, dataset_dir, output_dir, pred, part_name_list)
-    #build_website_from_mmdet3d_without_pred(annotations, dataset_dir, output_dir, part_name_list)
+    build_website_from_mmdet3d(cat, level, annotations, dataset_dir, output_dir, pred, part_name_list)
+    #build_website_from_mmdet3d_without_pred(cat, level, annotations, dataset_dir, output_dir, part_name_list)
 
 
 if __name__ == '__main__':

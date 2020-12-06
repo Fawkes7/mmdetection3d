@@ -40,11 +40,11 @@ if __name__ == '__main__':
         if folder.is_dir():
             name = folder.name
             cat, level = name.split('-')
-            if name <= 'Door-3':
+            if name != 'Bed-1':
                 print('Skip name ' + name)
                 continue
             print(f'Run {cat} {level}')
-            run_one(cat, level, generate_data=True, run_train=True, run_test=False)
+            run_one(cat, level, generate_data=False, run_train=False, run_test=True)
 
 #cat_info = json.load(open('/home/lz/data/Projects/Vision/3D/code/working_code/configs/partnet_category.json'))
 #cat = cat_info['cat']
