@@ -1,8 +1,8 @@
 
-config_root = '/home/lz/data/Projects/Vision/3D/github_resources/mmdetection3d/configs/_base_/'
+config_root = '/home/haoyuan/mmdet/mmdetection3d/configs/_base_/'# TODO
 '''
 import os.path as osp, pickle
-mean_size = pickle.load(
+mean_size = pickle.load(_base_
     open('/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/Laptop-1/train/mean_size.pkl', 'rb'))
 print(mean_size)
 '''
@@ -11,7 +11,7 @@ mean_size = [[1.343528389930725, 0.8696274757385254, 0.2557317912578583],
              [1.3536276817321777, 0.08139896392822266, 0.9777247905731201]]
 
 _base_ = [
-    '/home/lz/data/Projects/Vision/3D/code/working_code/configs/partnet_data_config.py',
+    '/home/haoyuan/mmdetection3d/configs/partnet_data_config.py',
     config_root + 'models/votenet.py',
     config_root + 'schedules/schedule_3x.py', config_root + 'default_runtime.py'
 ]

@@ -101,11 +101,13 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
 
 def generate_scannet_like(cat='Laptop', level=1, mode='train'):
     print(f'Generate {cat} {level} {mode}')
-    root = Path(f'/home/lz/data/dataset/PartNet/ins_seg_h5_for_detection/{cat}-{level}/')
-    with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
+    out_root = "/home/haoyuan/data"
+    root_h5data = '/home/haoyuan/data/h5PartNet'
+    root = Path(f'{root_h5data}/ins_seg_h5_for_detection/{cat}-{level}/')
+    with open(f'{root_h5data}/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
         part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
     files = sorted([str(_) for _ in root.glob(f'{mode}*.h5')])
-    generate_scannet_like_from_h5(files, part_name_list, f'partnet_dataset/{cat}-{level}/{mode}', mode=mode)
+    generate_scannet_like_from_h5(files, part_name_list, f'{out_root}/partnet_dataset/{cat}-{level}/{mode}', mode=mode)
 
 
 generate_scannet_like(mode='train')
