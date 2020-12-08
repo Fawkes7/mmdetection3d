@@ -174,11 +174,24 @@ Ground Truth:
         return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
     }
 
+    function keyboard(e) {
+        switch (e.key || String.fromCharCode(e.keyCode || e.charCode)) {
+            case 'e':
+            case 'ArrowLeft':
+                window.location.replace("&lformat next_page &rformat");
+                break;
+            case 'q':
+            case 'ArrowRight':
+                window.location.replace("&lformat last_page &rformat");
+                break;
+        }
+    }
 
     function loadModelFile() {
         if (index > files.length - 1) {
             console.log(scene)
             camera.position.set(2, 2, 2);
+            window.addEventListener('keypress', keyboard);
             animate();
         }
         else {
@@ -273,6 +286,8 @@ Ground Truth:
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x72645b);
+        const axesHelper = new THREE.AxesHelper(3);
+        scene.add(axesHelper);
 
         // scene.background = new THREE.Color(0x000080)
         scene.fog = new THREE.Fog(0x72645b, 1, 15);

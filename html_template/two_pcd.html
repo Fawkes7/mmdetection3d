@@ -180,6 +180,8 @@ Ground Truth vs Prediction:
             this.scene = new THREE.Scene();
             this.scene.background = new THREE.Color(0x72645b);
             this.scene.fog = new THREE.Fog(0x72645b, 1, 15);
+            const axesHelper = new THREE.AxesHelper(3);
+            this.scene.add(axesHelper);
 
             // Ground
             var plane = new THREE.Mesh(
@@ -196,13 +198,13 @@ Ground Truth vs Prediction:
             this.scene.add(new THREE.HemisphereLight(0x555555, 0x111111));
             addShadowedLight(this.scene, 1, 1, 1, 0xffffff, 1.35);
             addShadowedLight(this.scene, 0.5, 1, -1, 0xffaa00, 1);
-
             for (var i = 0; i < meshes.length; i++) {
                 var mesh;
                 if (meshes[i].type === 'LineSegments')
                 {
-                    const box = meshes[i].box.clone();
-                    const color = meshes[i].material.color;
+                    var box = meshes[i].box.clone();
+                    var color = meshes[i].material.color;
+                    console.log(meshes[i].material.color);
                     mesh = new THREE.Box3Helper(box, color);
                 }
                 else
@@ -264,15 +266,34 @@ Ground Truth vs Prediction:
     }
 
 
+    function keyboard(e) {
+        switch (e.key || String.fromCharCode(e.keyCode || e.charCode)) {
+            case 'e':
+            case 'ArrowLeft':
+                window.location.replace("&lformat next_page &rformat");
+                break;
+            case 'q':
+            case 'ArrowRight':
+                window.location.replace("&lformat last_page &rformat");
+                break;
+        }
+    }
+
     function loadModelFile() {
         if (index > files.length - 1) {
             const unitHeight = window.innerHeight / 2.4;
             const unitWidth = window.innerWidth / 3;
+
             var canvas1 = document.getElementById("canvas1"), canvas2 = document.getElementById("canvas2");
             views.push(new Viewer(canvas1, unitWidth, unitHeight, unitWidth * 0,
                         unitHeight, shared_meshes.concat(gt_meshes)));
             views.push(new Viewer(canvas2, unitWidth, unitHeight, unitWidth * 0,
                         unitHeight, shared_meshes.concat(pred_meshes)));
+            //window.addEventListener('resize', onWindowResize, false);
+            window.addEventListener('keypress', keyboard);
+
+            const current_file_name = window.location.pathname;
+            //console.log(current_file_name + ' ' + path.dirname(current_file_name), path.join(path.dirname(current_file_name), '2.html'));
             animate();
         }
         else {

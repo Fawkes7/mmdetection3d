@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-add_subdirectory(pybind11)
+
+find_package(pybind11 REQUIRED)
 
 find_package(CGAL REQUIRED)
 include(${CGAL_USE_FILE})

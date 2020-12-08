@@ -1,12 +1,3 @@
-docker run \
-  -dit \
-  --gpus all \
-  --name="build_py_package" \
-  -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -v $(pwd):/home/lz/data \
-  -e DISPLAY=:0 \
-  -e QT_X11_NO_MITSHM=1 \
-  fxiangucsd/sapien-build-env \
-  bash
+#docker run -v `pwd`:/workspace/pycgal -it --rm lingzhan/python-build-env bash -c "cd /workspace/pycgal && sudo update-alternatives --install /usr/bin/python python3.6 /usr/bin/python3.6 36 && python setup.py build" #bash build_python_wheel.sh"
 
-docker exec -it build_py_package bash
+docker run -v `pwd`:/workspace/pycgal -it --rm lingzhan/python-build-env bash -c "cd /workspace/pycgal && bash build_python_wheel.sh"
