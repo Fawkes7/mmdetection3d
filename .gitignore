@@ -1,7 +1,6 @@
 # Byte-compiled / optimized / DLL files
 .gitignore
 
-*.yaml
 *_testcode.py
 __pycache__/
 *.py[cod]
