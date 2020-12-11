@@ -5,11 +5,17 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
-from network.pointnet2_utils import PointNetSetAbstractionMsg, PointNetSetAbstraction, PointNetFeaturePropagation
+from ASIS_Exps.network.pointnet2_utils import PointNetSetAbstractionMsg, PointNetSetAbstraction, PointNetFeaturePropagation
 from scipy.optimize import linear_sum_assignment
-from network.ASIS_utils import *
-from network.ASIS_loss import *
+from ASIS_Exps.network.ASIS_utils import *
+from ASIS_Exps.network.ASIS_loss import *
 
+from mmcv.cnn import ConvModule
+from mmcv.runner import auto_fp16, load_checkpoint
+from mmdet.models import BACKBONES, build_backbone
+
+
+@BACKBONES.register_module()
 class ASIS(nn.Module):
     def __init__(self, num_class, additional_channel=3, weight_decay=0):
         super(ASIS, self).__init__()
@@ -49,6 +55,7 @@ class ASIS(nn.Module):
 
         self.k = 30
 
+    @auto_fp16()
     def forward(self, pc):
         B, C, N = pc.size()
         l0_xyz, l0_points = pc, pc
