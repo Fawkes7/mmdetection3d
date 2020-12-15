@@ -1,23 +1,21 @@
 import os
-from pathlib import Path
-import json
 import sys
 import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data
-from pointnet2_utils import PointNetSetAbstractionMsg, PointNetSetAbstraction, PointNetFeaturePropagation
+from ASIS_Exps.network.pointnet2_utils import PointNetSetAbstractionMsg, PointNetSetAbstraction, PointNetFeaturePropagation
 from scipy.optimize import linear_sum_assignment
-from ASIS_utils import *
-from ASIS_loss import *
-from ASIS_Exps.data.partnet_dataset import PartNetDataset
+from ASIS_Exps.network.ASIS_utils import *
+from ASIS_Exps.network.ASIS_loss import *
+
 from mmcv.cnn import ConvModule
 from mmcv.runner import auto_fp16, load_checkpoint
 from mmdet.models import BACKBONES, build_backbone
 
 
-# @BACKBONES.register_module()
+@BACKBONES.register_module()
 class ASIS(nn.Module):
     def __init__(self, num_class, additional_channel=3, weight_decay=0):
         super(ASIS, self).__init__()
@@ -57,7 +55,7 @@ class ASIS(nn.Module):
 
         self.k = 30
 
-    # @auto_fp16()
+    @auto_fp16()
     def forward(self, pc):
         B, C, N = pc.size()
         l0_xyz, l0_points = pc, pc
@@ -83,7 +81,7 @@ class ASIS(nn.Module):
         fms_sem = self.sem_bn1(self.sem_fc1(l0_points_sem))
         # print(fms_sem.size())
         fms_sem_cache = self.sem_bn2(self.sem_fc2(fms_sem))
-        # print(fms_sem_cache.size())
+        print(fms_sem_cache.size())
 
         # ins seg
         l3_points_ins = self.ins_fp4(l3_xyz, l4_xyz, l3_points, l4_points)
@@ -98,12 +96,12 @@ class ASIS(nn.Module):
         fms_ins += fms_sem_cache
         fms_ins = F.dropout(fms_ins, p=0.5, training=self.training)
         fms_ins = self.ins_fc2(fms_ins)  # [B,5,N]
-        # print(fms_ins.size())
+        print(fms_ins.size())
 
         # fusion
         adj_matrix = pairwise_distance(fms_ins)
         nn_idx = knn_thre(adj_matrix, k=self.k).detach()
-        # print(nn_idx.size())
+        print(nn_idx.size())
 
         fms_sem = get_local_feature(fms_sem, nn_idx=nn_idx, k=self.k)  # [B,C,K,N]
         fms_sem = torch.max(fms_sem, dim=-2, keepdim=False)[0]
@@ -115,31 +113,15 @@ class ASIS(nn.Module):
 
 
 if __name__ == '__main__':
-
-    if torch.cuda.is_available():
-        dev = "cuda:0"
-    device = torch.device(dev)
-
-    cur_path = Path(os.path.abspath(os.getcwd()))
-    config_folder = cur_path.parent.parent / 'configs/'
-    cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
-    dataset = PartNetDataset(cat_info, 'train')
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
     torch.autograd.set_detect_anomaly(True)
-    net = ASIS(num_class=3).cuda()
-    net.train()
-    for epoch in range(2):
-        for i, batch in enumerate(dataloader):
-            # gt: instance segmentation label
-            # gt_sem: semantic segmentation label
-            pc, gt, gt_sem = batch[0].cuda(), batch[2].cuda(), batch[1].cuda()
-            pc = torch.transpose(pc, 1, 2).cuda()
-            # pc = torch.randn((5,3,100), requires_grad=True)
-            fm_sem, fm_ins = net(pc)
-            criterion = torch.nn.CrossEntropyLoss().cuda()
-            # gt = torch.randint(low=0, high=6, size=(5,100))
-            # gt_sem = torch.randint(low=0, high=12, size=(5,100))
-            sem_loss, ins_loss, _, _, _ = get_loss(fm_ins, gt, fm_sem, gt_sem, criterion)  # pred, ins_label, pred_sem_logit, sem_label, criterion
-            loss = sem_loss + ins_loss
-            assert ~torch.isnan(loss)
-            loss.backward()
+    net = ASIS(num_class=12)
+    pc = torch.randn((5,3,100), requires_grad=True)
+    fm_sem, fm_ins = net(pc)
+    print(fm_sem.size(), fm_ins.size())
+    criterion = torch.nn.CrossEntropyLoss().to(fm_sem.device)
+    gt = torch.randint(low=0, high=6, size=(5,100))
+    gt_sem = torch.randint(low=0, high=12, size=(5,100))
+    sem_loss, ins_loss, _, _, _ = get_loss(fm_ins, gt, fm_sem, gt_sem, criterion)  # pred, ins_label, pred_sem_logit, sem_label, criterion
+    loss = sem_loss + ins_loss
+    loss.backward()
+    print(loss)

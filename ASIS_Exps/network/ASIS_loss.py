@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from network.ASIS_utils import unsorted_segment_sum
+from ASIS_utils import unsorted_segment_sum
 
 def get_loss(pred, ins_label, pred_sem_logit, sem_label, criterion):
     '''
@@ -25,9 +25,8 @@ def discriminative_loss(pred, ins_label, dim=5,
                         delta_v=0.5, delta_d=1.5, param_var=1.0, param_dist=1.0, param_reg=0.001):
     l_disc_list, l_var_list, l_dist_list, l_reg_list = [], [], [], []
     B = pred.size(0)
-
     for i in range(B):
-        l_disc, l_var, l_dist, l_reg = discriminative_loss_single(pred[i], ins_label[i], dim,
+        l_disc, l_var, l_dist, l_reg = discriminative_loss_single(pred[i], ins_label[i], dim, \
                                                                   delta_v, delta_d, param_var, param_dist, param_reg)
         l_disc_list.append(l_disc)
         l_var_list.append(l_var)
@@ -55,14 +54,16 @@ def discriminative_loss_single(pred, ins_label, dim,
     :return:
     '''
     E, N = pred.size()
-    pred = pred.permute(1,0)  # [N,E]
+    pred = pred.permute(1, 0)  # [N,E]
 
     unique_labels, unique_idx, counts = torch.unique(ins_label, sorted=True, return_inverse=True, return_counts=True)  # [C], [N], [C]
+
     num_ins = unique_labels.size(0)  # C
     counts = counts.view(-1,1)  # [C,1]
 
     #ins_sum = torch.zeros(num_ins, dim).scatter_add_(dim=0, index=unique_idx, src=pred).to(pred.device)
     ins_sum = unsorted_segment_sum(pred, unique_idx, num_ins)
+
     # [N,E] selected by [N] into C groups, return [C,E]
 
     mu = ins_sum / counts  # averaged representation for each instance in [C,E]
@@ -98,7 +99,6 @@ def discriminative_loss_single(pred, ins_label, dim,
     l_dist = param_dist * l_dist
     l_reg = param_reg * l_reg
 
-    #print(l_var, l_dist, l_reg)
     loss = param_scale * (l_var + l_dist + l_reg)
     return loss, l_var, l_dist, l_reg
 
