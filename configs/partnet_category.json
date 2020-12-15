@@ -1,4 +1,8 @@
 {
-  "cat": "Bed",
-  "level": "1"
+  "cat": "Laptop",
+  "level": "1",
+  "working_code": "/home/haoyuan/mmdetection3d",
+  "generated_data":"/home/haoyuan/data",
+  "partnet": "/home/haoyuan/data/h5PartNet",
+  "mmdet3d": "/home/haoyuan/mmdet/mmdetection3d"
 }

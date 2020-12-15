@@ -1,7 +1,9 @@
 import json, pathlib
-
+import os
 # config_folder = pathlib.Path(__file__).parent.parent
-config_folder = pathlib.Path('/home/lz/data/Projects/Vision/3D/code/working_code/configs/')
+cur_path = pathlib.Path(os.path.abspath(os.getcwd()))
+config_folder = cur_path.parent
+print(config_folder)
 
 cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
 cat = cat_info['cat']

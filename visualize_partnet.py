@@ -1,4 +1,4 @@
-import pycgal, mmdet3d, h5py, mmcv, os.path as osp, numpy as np, os, shutil, pandas as pd, pickle, json, torch
+import  mmdet3d, h5py, mmcv, os.path as osp, numpy as np, os, shutil, pandas as pd, pickle, json, torch
 import json, pathlib
 from pathlib import Path
 from pc_util import write_ply_color, point_cloud_to_bbox, render_pts_with_label, write_bbox, write_bbox_color, write_bbox_color_json
@@ -6,10 +6,11 @@ from progressbar import ProgressBar
 from mmdet3d.core.evaluation.indoor_eval import eval_map_recall, eval_det_cls
 from collections import defaultdict
 
-
-item_template = f'/home/lz/data/Projects/Vision/3D/code/working_code/html_template/one_pcd.html'
-item2_template = f'/home/lz/data/Projects/Vision/3D/code/working_code/html_template/two_pcd.html'
-table_template = f'/home/lz/data/Projects/Vision/3D/code/working_code/html_template/table.html'
+cur_path = pathlib.Path(os.path.abspath(os.getcwd()))
+template_path  = cur_path / 'html_template'
+item_template = template_path / 'one_pcd.html'
+item2_template = template_path / 'two_pcd.html'
+table_template = template_path / 'table.html'
 
 
 def make_relpath_dict(d: dict, base_dir):
@@ -370,32 +371,36 @@ def build_website_from_mmdet3d_without_pred(cat, level, annotations, dataset_dir
 
 def generate_website(cat=None, level=None, mode='train'):
     # config_folder = pathlib.Path(__file__).parent.parent
-    config_folder = pathlib.Path('/home/lz/data/Projects/Vision/3D/code/working_code/configs/')
+    # cur_path is specificed at the beginning
+    config_folder = cur_path / 'configs/'
     cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
     cat = cat_info['cat'] if cat is None else cat
     level = cat_info['level'] if cat is None else level
     working_code = pathlib.Path(cat_info['working_code'])
     partnet = pathlib.Path(cat_info['partnet'])
     mmdet3d_folder = pathlib.Path(cat_info['mmdet3d'])
-
+    generated_data = pathlib.Path(cat_info["generated_data"])
     output_dir = str(working_code / f'partnet_visualizer/{cat}-{level}/{mode}')
-    dataset_dir = str(working_code / f'partnet_dataset/{cat}-{level}/{mode}/')
-    info_file = str(working_code / f'partnet_dataset/{cat}-{level}/{mode}/info.pkl')
+    dataset_dir = str(generated_data / f'partnet_dataset/{cat}-{level}/{mode}/')
+    info_file = str(generated_data / f'partnet_dataset/{cat}-{level}/{mode}/info.pkl')
+    # print("info_file", info_file)
     annotations = pickle.load(open(info_file, 'rb'))
+    # print("annotations", len(annotations), annotations)
     with open(str(partnet / f'stats/after_merging2_label_ids/{cat}-level-{level}.txt'), 'r') as fin:
         part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
-
     part_name_list = [_.split('/')[-1] for _ in part_name_list]
-    pred = pickle.load(open(str(mmdet3d_folder / f'results/{mode}_{cat}-{level}.pkl'), 'rb'))
-    build_website_from_mmdet3d(cat, level, annotations, dataset_dir, output_dir, pred, part_name_list)
-    #build_website_from_mmdet3d_without_pred(cat, level, annotations, dataset_dir, output_dir, part_name_list)
+    # pred = pickle.load(open(str(mmdet3d_folder / f'results/{mode}_{cat}-{level}.pkl'), 'rb'))
+    # build_website_from_mmdet3d(cat, level, annotations, dataset_dir, output_dir, pred, part_name_list)
+    build_website_from_mmdet3d_without_pred(cat, level, annotations, dataset_dir, output_dir, part_name_list)
 
 
 if __name__ == '__main__':
-    cat_info = json.load(open('/home/lz/data/Projects/Vision/3D/code/working_code/configs/partnet_category.json'))
+    config_folder = cur_path / 'configs/'
+    cat_info = json.load(open(config_folder / 'partnet_category.json'))
     cat = cat_info['cat']
     level = str(cat_info['level'])
     mode = 'train'
+    generate_website(cat, level, mode)
 
 
 

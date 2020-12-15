@@ -13,6 +13,8 @@ with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-l
     print(class_names)
     tuple(np.arange(len(class_names)))),
 '''
+
+
 class_names = ['laptop/screen_side', 'laptop/base_side']
 
 test_pipeline = [

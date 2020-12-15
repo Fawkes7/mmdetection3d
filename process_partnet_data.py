@@ -3,7 +3,7 @@ from pc_util import point_cloud_to_bbox
 from pathlib import Path
 import mmcv, os.path as osp
 from collections import defaultdict
-
+import os
 
 def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
     mmcv.mkdir_or_exist(output_dir)
@@ -20,11 +20,12 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
             sem_labels = file_h5['gt_label']
             valids = file_h5['gt_valid']
             other_masks = file_h5['gt_other_mask']
-
             for i in range(points.shape[0]):
                 point = points[i]
                 part_mask = part_masks[i]
                 sem_label = sem_labels[i]
+                if i < 2:
+                    print(i, "sem_labels", sem_labels)
                 valid = valids[i]
                 boxes = []
                 names = []
@@ -41,6 +42,7 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
                     part_label[part_mask_j] = len(boxes)
                     boxes.append(box)
                     classes.append(int(sem_label[part_mask_j][0]) - 1)
+
                     if classes[-1] >= len(part_name_lists):
                         print(classes[-1], part_name_lists)
                         exit(0)
@@ -54,6 +56,7 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
                 point = np.array(point).astype(np.float32)
                 part_label = np.array(part_label).astype(np.long)
                 sem_label = np.array(sem_label).astype(np.long)
+
 
                 # print(f'point_{example_index}.bin'))
                 # print(point.shape)
@@ -100,32 +103,27 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
     pickle.dump(ret, open(osp.join(output_dir, 'info.pkl'), 'wb'))
 
 
-def generate_scannet_like(cat='Laptop', level=1, mode='train',
-                          partnet_dir=f'/home/lz/data/dataset/PartNet/'):
+def generate_scannet_like(cat='Laptop', level=1, mode='train'):
     print(f'Generate {cat} {level} {mode}')
     # use your personalized datapath
-    out_root = "/home/haoyuan/data"
-    root_h5data = '/home/haoyuan/data/h5PartNet'
+    out_root = f"/home/haoyuan/data/partnet_dataset/{cat}-{level}/{mode}"
+    root_h5data = Path('/home/haoyuan/data/h5PartNet')
     root = Path(f'{root_h5data}/ins_seg_h5_for_detection/{cat}-{level}/')
-    with open(f'{root_h5data}/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
-        root = Path(partnet_dir) / f'ins_seg_h5_for_detection/{cat}-{level}/'
-    with open(str(Path(partnet_dir) / f'stats/after_merging2_label_ids/{cat}-level-{level}.txt'), 'r') as fin:
-        root = Path(f'/home/lz/data/dataset/PartNet/ins_seg_h5_for_detection/{cat}-{level}/')
-    with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
-        part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
     files = sorted([str(_) for _ in root.glob(f'{mode}*.h5')])
-    generate_scannet_like_from_h5(files, part_name_list, f'partnet_dataset/{cat}-{level}/{mode}', mode=mode)
+
+    with open(f'{root_h5data}/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
+        part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
+    generate_scannet_like_from_h5(files, part_name_list, out_root, mode=mode)
 
 
 if __name__ == '__main__':
     import json
-    cat_info = json.load(open('/home/lz/data/Projects/Vision/3D/code/working_code/configs/partnet_category.json'))
+
+    cur_path = Path(os.path.abspath(os.getcwd()))
+    config_folder = cur_path / 'configs'
+    cat_info = json.load(open(config_folder /'partnet_category.json'))
     cat_a = cat_info['cat']
     level_a = cat_info['level']
-
-    #cat_a = 'Bed'
-    #level_a = 1
-
     generate_scannet_like(cat_a, level_a, mode='train')
     generate_scannet_like(cat_a, level_a, mode='test')
     generate_scannet_like(cat_a, level_a, mode='val')

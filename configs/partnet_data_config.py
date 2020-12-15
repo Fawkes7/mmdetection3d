@@ -1,19 +1,27 @@
-#import numpy as np, os.path as osp
-
+import json, pickle
+from pathlib import Path
+import os
 dataset_type = 'ScanNetDataset'
-cat = 'Laptop'
-level = 1
-train_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/train/'
-test_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/test/'
-val_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/val/'
 
-'''
-with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
-    class_names = tuple([item.rstrip().split()[1] for item in fin.readlines()])
-    print(class_names)
-    tuple(np.arange(len(class_names)))),
-'''
-class_names = ['laptop/screen_side', 'laptop/base_side']
+cur_path = pathlib.Path(os.path.abspath(os.getcwd()))
+config_folder = cur_path.parent.parent / 'configs'
+# category info
+cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
+
+cat = cat_info['cat']
+level = cat_info['level']
+
+generated_data = Path(cat_info["generated_data"])
+
+train_root = str(generated_data/ f"partnet_dataset/{cat}-{level}/train" )
+test_root = str(generated_data/ f"partnet_dataset/{cat}-{level}/test" )
+val_root = str(generated_data/ f"partnet_dataset/{cat}-{level}/val" )
+
+# train for a single class
+# here we only load label for a single class
+label_path = str(Path(cat_info["partnet"]) / f"stats/after_merging2_label_ids/{cat}-level-{level}.txt")
+with open(label_path, 'r') as fin:
+    class_names = [item.rstrip().split()[1] for item in fin.readlines()]
 
 train_pipeline = [
     dict(
@@ -92,7 +100,7 @@ data = dict(
             ann_file=train_root + 'info.pkl',
             pipeline=train_pipeline,
             filter_empty_gt=False,
-            classes=['laptop/screen_side', 'laptop/base_side'],
+            classes=class_names,
             # we use box_type_3d='LiDAR' in kitti and nuscenes dataset
             # and box_type_3d='Depth' in sunrgbd and scannet dataset.
             box_type_3d='Depth')),

@@ -2,7 +2,7 @@ import json, pickle, pathlib
 import os
 # all config file is in the parent folder
 cur_path = pathlib.Path(os.path.abspath(os.getcwd()))
-config_folder = cur_path.parent.parent / 'configs'
+config_folder = cur_path.parent / 'configs'
 # category info
 cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
 
@@ -22,9 +22,9 @@ schedule_root = working_code / 'configs/schedules/'
 
 _base_ = [
     str(data_config),
-    str(config_root / 'network/ASIS.py'),
+    str(config_root / 'ASIS_Exps/network/ASIS.py'),
     str(config_root / 'schedules/schedule_3x.py'),
-    str(config_root + 'default_runtime.py'),
+    str(config_root / 'default_runtime.py'),
     str(data_root / 'partnet_train_data_config.py'),
     str(model_root / 'ASIS.py'),
     str(schedule_root / 'schedule_partnet.py'), str(config_root / 'default_runtime.py')

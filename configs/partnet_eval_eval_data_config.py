@@ -6,6 +6,7 @@ level = 1
 train_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/train/'
 test_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/test/'
 val_root = f'/home/lz/data/Projects/Vision/3D/code/working_code/partnet_dataset/{cat}-{level}/val/'
+199706
 
 '''
 with open(f'/home/lz/data/dataset/PartNet/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
