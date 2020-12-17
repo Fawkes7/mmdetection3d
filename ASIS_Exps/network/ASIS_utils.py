@@ -22,8 +22,7 @@ def knn_thre(adj_matrix, k=20, thre=0.5):
     for i in range(B):
         idx_vals = vals[i]
         idx_nn_idx = nn_idx[i]
-        # mask = (idx_vals < -1.0 * thre).clone.detach().requires_grad_(True)
-        mask = torch.tensor(idx_vals < -1.0 * thre, dtype=torch.int32).cuda()
+        mask = (idx_vals < -1.0 * thre).clone().detach().int().cuda() # requires_grad_(False)
         idx_to_add = to_add * mask
         idx_nn_idx = idx_nn_idx * (1 - mask) + idx_to_add
         final_nn_idx.append(idx_nn_idx)

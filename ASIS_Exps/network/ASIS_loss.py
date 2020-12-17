@@ -26,8 +26,7 @@ def discriminative_loss(pred, ins_label, dim=5,
     l_disc_list, l_var_list, l_dist_list, l_reg_list = [], [], [], []
     B = pred.size(0)
     for i in range(B):
-        l_disc, l_var, l_dist, l_reg = discriminative_loss_single(pred[i], ins_label[i], dim, \
-                                                                  delta_v, delta_d, param_var, param_dist, param_reg)
+        l_disc, l_var, l_dist, l_reg = discriminative_loss_single(pred[i], ins_label[i], dim,delta_v, delta_d, param_var, param_dist, param_reg)
         l_disc_list.append(l_disc)
         l_var_list.append(l_var)
         l_dist_list.append(l_dist)

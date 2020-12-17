@@ -47,14 +47,14 @@ class PartNetDataset(Dataset):
         # names, class are not used
         names = annotation['annos']['name']
         classes = annotation['annos']['class']
-        return point, sem, instance+1  #, names, classes
 
-
+        return point, sem, instance, names, classes
 
 if __name__=='__main__':
     cur_path = Path(os.path.abspath(os.getcwd()))
     config_folder = cur_path.parent.parent / 'configs/'
     cat_info = json.load(open(str(config_folder / 'partnet_category.json')))
     dataset = PartNetDataset(cat_info, 'train')
-    print(torch.unique(torch.tensor(dataset[0][1])))
-    print(dataset[0][0].shape, dataset[1][1], dataset[1][2])
+    print(torch.unique(torch.tensor(dataset[0][2])))
+    print(dataset[0][0].shape, dataset[0][1], dataset[1][2])
+    print('names, classes', dataset[1][3], dataset[0][4])

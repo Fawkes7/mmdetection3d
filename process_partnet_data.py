@@ -24,8 +24,6 @@ def generate_scannet_like_from_h5(files, part_name_lists, output_dir, mode):
                 point = points[i]
                 part_mask = part_masks[i]
                 sem_label = sem_labels[i]
-                if i < 2:
-                    print(i, "sem_labels", sem_labels)
                 valid = valids[i]
                 boxes = []
                 names = []
@@ -113,12 +111,12 @@ def generate_scannet_like(cat='Laptop', level=1, mode='train'):
 
     with open(f'{root_h5data}/stats/after_merging2_label_ids/{cat}-level-{level}.txt', 'r') as fin:
         part_name_list = [item.rstrip().split()[1] for item in fin.readlines()]
+    # print(len(part_name_list))
     generate_scannet_like_from_h5(files, part_name_list, out_root, mode=mode)
 
 
 if __name__ == '__main__':
     import json
-
     cur_path = Path(os.path.abspath(os.getcwd()))
     config_folder = cur_path / 'configs'
     cat_info = json.load(open(config_folder /'partnet_category.json'))
