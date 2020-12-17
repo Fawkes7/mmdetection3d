@@ -126,7 +126,7 @@ if __name__ == '__main__':
     dataset = PartNetDataset(cat_info, 'train')
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True, num_workers=1)
     torch.autograd.set_detect_anomaly(True)
-    net = ASIS(num_class=18).cuda()
+    net = ASIS(num_class=3).cuda()
     net.train()
     learning_rate = 0.008 
     optimizer = torch.optim.RMSprop(net.parameters(), lr=learning_rate)
